@@ -94,6 +94,13 @@ button {
     0% { transform:translate(0,0) scale(1); opacity:1; }
     100% { transform:translate(var(--x), var(--y)) rotate(360deg); opacity:0; }
 }
+
+/* Nouveau style pour le High Score */
+.high-score-label {
+    color: #FFD700; /* Couleur Or */
+    font-weight: bold;
+    margin-top: 10px;
+}
 </style>
 </head>
 
@@ -101,6 +108,7 @@ button {
 
 <div id="menu">
   <h1>Puzzle Challenge</h1>
+  <div id="menuHighScore" class="high-score-label"></div> <br>
   <button onclick="startGame()">Play</button>
 </div>
 
@@ -114,7 +122,7 @@ button {
 <div id="endScreen" style="display:none;">
   <h2>Time's up!</h2>
   <h3 id="finalScore"></h3>
-  <button onclick="location.reload()">Play Again</button>
+  <h3 id="endHighScore" class="high-score-label"></h3> <button onclick="location.reload()">Play Again</button>
 </div>
 
 <script>
@@ -125,6 +133,10 @@ let score = 0;
 let timerInterval;
 let missingIndex;
 let solved = false;
+
+// --- LOGIQUE HIGH SCORE ---
+let highScore = localStorage.getItem("puzzleHighScore") || 0;
+document.getElementById("menuHighScore").textContent = "Best Score: " + highScore;
 
 const correctSound = new Audio("win.wav");
 const wrongSound = new Audio("fail.wav");
@@ -161,6 +173,16 @@ function endGame() {
     game.style.display = "none";
     endScreen.style.display = "block";
     finalScore.textContent = "Score: " + score;
+
+    // --- MISE À JOUR DU HIGH SCORE ---
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("puzzleHighScore", highScore);
+        document.getElementById("endHighScore").textContent = "NEW BEST SCORE! 🏆";
+    } else {
+        document.getElementById("endHighScore").textContent = "Best Score: " + highScore;
+    }
+
     timesUpSound.currentTime = 0;
     timesUpSound.play();
 }
@@ -238,7 +260,6 @@ function selectChoice(isCorrect, choiceDiv){
         const startRect = choiceDiv.getBoundingClientRect();
         const endRect = targetCell.getBoundingClientRect();
 
-        // 1️⃣ cloner la pièce originale (clone garde l'image)
         const clone = choiceDiv.cloneNode(true);
         clone.style.position = "fixed";
         clone.style.left = startRect.left + "px";
@@ -246,32 +267,26 @@ function selectChoice(isCorrect, choiceDiv){
         clone.style.width = startRect.width + "px";
         clone.style.height = startRect.height + "px";
         clone.style.margin = 0;
-        clone.style.zIndex = 1000; // au-dessus de tout
+        clone.style.zIndex = 1000; 
         clone.style.transition = "transform 0.2s ease-in-out";
         clone.style.transformOrigin = "top left";
         document.body.appendChild(clone);
 
-        // 2️⃣ maintenant remplacer la vraie pièce par noir
         choiceDiv.style.backgroundImage = "";
         choiceDiv.style.background = "black";
         choiceDiv.style.pointerEvents = "none";
 
-        // 3️⃣ confettis sur la pièce noire (au-dessus)
         spawnConfettiAt(startRect);
 
-        // 4️⃣ force reflow pour animation
         clone.getBoundingClientRect();
 
-        // 5️⃣ calcul translation + scale
         const deltaX = endRect.left - startRect.left;
         const deltaY = endRect.top - startRect.top;
         const scaleX = endRect.width / startRect.width;
         const scaleY = endRect.height / startRect.height;
 
-        // 6️⃣ glisser et agrandir
         clone.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`;
 
-        // 7️⃣ après animation
         setTimeout(() => {
             targetCell.style.backgroundImage = clone.style.backgroundImage;
             targetCell.style.backgroundSize = clone.style.backgroundSize;
@@ -291,7 +306,6 @@ function selectChoice(isCorrect, choiceDiv){
         correctSound.play();
 
     } else {
-        // mauvais choix
         choiceDiv.classList.add("wrong","disabled");
         choiceDiv.style.backgroundImage = "";
         choiceDiv.style.background = "black";
@@ -312,7 +326,7 @@ function spawnConfettiAt(rect){
         conf.style.position = "fixed";
         conf.style.left = rect.left + rect.width/2 + "px";
         conf.style.top = rect.top + rect.height/2 + "px";
-        conf.style.zIndex = 1100; // au-dessus de tout
+        conf.style.zIndex = 1100; 
         conf.style.width = "6px";
         conf.style.height = "6px";
         conf.style.background = `hsl(${Math.random()*360},100%,50%)`;
